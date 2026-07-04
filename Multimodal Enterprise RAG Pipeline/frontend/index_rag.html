@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise Multimodal RAG Analytics Workspace</title>
+    <style>
+        :root { --bg: #060913; --surface: #0f1526; --border: #1e293b; --text: #f8fafc; --text-muted: #64748b; --primary: #2563eb; --primary-glow: rgba(37, 99, 235, 0.15); --accent: #10b981; --amber: #f59e0b; }
+        body { background-color: var(--bg); color: var(--text); font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif; margin: 0; padding: 0; letter-spacing: -0.01em; }
+        
+        header { background-color: #02040a; border-bottom: 1px solid var(--border); padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+        .branding h1 { margin: 0; font-size: 20px; font-weight: 800; color: #f8fafc; background: linear-gradient(to right, #ffffff, #93c5fd); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .branding p { margin: 4px 0 0 0; font-size: 12px; color: var(--text-muted); font-weight: 500; }
+        .system-badge { background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); padding: 6px 14px; border-radius: 30px; font-size: 11px; font-weight: 700; color: #34d399; text-transform: uppercase; letter-spacing: 0.05em; }
+        
+        main { max-width: 1500px; margin: 0 auto; padding: 32px; display: grid; grid-template-columns: 360px 1fr; gap: 28px; }
+        .control-sidebar { display: flex; flex-direction: column; gap: 24px; }
+        .panel { background-color: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        .panel h2 { margin: 0 0 18px 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: #94a3b8; font-weight: 800; border-left: 3px solid var(--primary); padding-left: 8px; }
+        
+        .upload-area { border: 2px dashed #334155; border-radius: 10px; padding: 36px 16px; text-align: center; cursor: pointer; transition: all 0.2s ease; background-color: rgba(2,4,10,0.2); }
+        .upload-area:hover { border-color: var(--primary); background-color: var(--primary-glow); }
+        .upload-area input { display: none; }
+        .upload-label { font-size: 13px; color: #94a3b8; display: block; margin-bottom: 14px; font-weight: 500; }
+        
+        .btn { width: 100%; font-weight: 700; font-size: 13px; padding: 12px; border-radius: 8px; border: 0; cursor: pointer; transition: all 0.2s ease; text-transform: uppercase; letter-spacing: 0.02em; }
+        .btn-primary { background-color: var(--primary); color: white; box-shadow: 0 4px 14px rgba(37,99,235,0.4); }
+        .btn-primary:hover { background-color: #1d4ed8; transform: translateY(-1px); }
+        .btn-secondary { background-color: #1e293b; color: #e2e8f0; border: 1px solid #334155; }
+        .btn-secondary:hover { background-color: #334155; }
+        
+        .analytics-grid { display: flex; flex-direction: column; gap: 24px; }
+        .kpi-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        .kpi-card { background-color: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; position: relative; box-shadow: 0 4px 20px rgba(0,0,0,0.15); overflow: hidden; }
+        .kpi-card::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; }
+        .kpi-card.blue-bar::before { background-color: var(--primary); }
+        .kpi-card.green-bar::before { background-color: var(--accent); }
+        .kpi-card.amber-bar::before { background-color: var(--amber); }
+        .kpi-card .kpi-val { font-size: 22px; font-weight: 800; color: #ffffff; margin-top: 6px; letter-spacing: -0.02em; }
+        .kpi-card .kpi-lbl { font-size: 11px; text-transform: uppercase; color: #94a3b8; font-weight: 700; letter-spacing: 0.04em; }
+        
+        .dashboard-split { display: grid; grid-template-columns: 1fr 1.1fr; gap: 24px; }
+        .query-box-layout { background-color: #02040a; border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; display: flex; gap: 14px; margin-bottom: 20px; transition: border-color 0.2s; }
+        .query-box-layout:focus-within { border-color: var(--primary); }
+        .query-box-layout input { flex: 1; background: transparent; border: 0; color: white; font-size: 14px; outline: none; font-weight: 500; }
+        .query-box-layout button { background: var(--primary); color: white; border: 0; border-radius: 6px; padding: 8px 18px; font-weight: 700; font-size: 12px; cursor: pointer; transition: background 0.2s; }
+        .query-box-layout button:hover { background: #1d4ed8; }
+        
+        .chart-frame { background-color: #02040a; border: 1px solid var(--border); border-radius: 10px; padding: 24px; display: flex; flex-direction: column; justify-content: space-between; height: 250px; margin-top: 6px; }
+        .vector-graph { display: flex; align-items: flex-end; justify-content: space-around; height: 180px; border-bottom: 2px solid #1e293b; padding: 0 10px; gap: 14px; }
+        .bar-wrapper { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; position: relative; }
+        .bar { width: 100%; max-width: 42px; background: linear-gradient(to top, #1d4ed8, #60a5fa); border-radius: 6px 6px 0 0; transition: height 0.6s cubic-bezier(0.4, 0, 0.2, 1); height: 0%; position: relative; }
+        .bar-val { font-size: 10px; font-weight: 800; color: white; position: absolute; top: -22px; width: 100%; text-align: center; opacity: 0; transition: opacity 0.2s; }
+        .bar-wrapper:hover .bar { background: linear-gradient(to top, var(--accent), #34d399); }
+        .bar-wrapper:hover .bar-val { opacity: 1; }
+        .bar-lbl { font-size: 10px; color: #94a3b8; margin-top: 10px; text-align: center; font-weight: 600; }
+        
+        .matrix-list { display: flex; flex-direction: column; gap: 12px; margin-top: 6px; }
+        .matrix-item { background-color: #02040a; border-left: 4px solid var(--accent); padding: 14px 18px; border-radius: 0 8px 8px 0; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+        .matrix-meta h4 { margin: 0; font-size: 13px; font-weight: 700; color: white; }
+        .matrix-meta p { margin: 3px 0 0 0; font-size: 11px; color: #94a3b8; font-weight: 500; }
+        .matrix-tag { background-color: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.2); padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; color: #34d399; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        
+        .response-container { background: #02040a; border: 1px solid var(--border); border-radius: 10px; padding: 18px; min-height: 150px; box-shadow: inset 0 2px 10px rgba(0,0,0,0.5); }
+        .response-container p { font-size: 13.5px; line-height: 1.7; color: #cbd5e1; margin: 0; font-weight: 500; }
+        .panel-label { font-size: 10px; text-transform: uppercase; font-weight: 800; color: #94a3b8; letter-spacing: 0.06em; display: block; margin-bottom: 10px; }
+        
+        .pulse { color: var(--amber); animation: blink 1.6s infinite; }
+        @keyframes blink { 50% { opacity: 0.25; } }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="branding">
+            <h1>🔬 Multimodal Enterprise RAG Analytics Workspace</h1>
+            <p>High-speed telemetry ingestion and structured vector space mapping engine</p>
+        </div>
+    </header>
+
+    <main>
+        <!-- Sidebar Controllers -->
+        <div class="control-sidebar">
+            <div class="panel">
+                <h2>1. File Ingestion Pipeline</h2>
+                <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+                    <span class="upload-label" id="fileLabel">Drop database PDF or browse files</span>
+                    <button class="btn btn-secondary" style="pointer-events: none;">Select Payload</button>
+                    <input type="file" id="fileInput" accept=".pdf" onchange="handleFileSelection()"/>
+                </div>
+                <button class="btn btn-primary" onclick="uploadDocument()" style="margin-top: 18px;">Execute Extraction</button>
+                <div id="statusLog" style="margin-top: 14px; font-size: 12px; text-align: center; font-weight: 600;"></div>
+            </div>
+        </div>
+
+        <!-- Dashboard Visual Panel Layer -->
+        <!-- Card 1: Scope -->
+<div class="kpi-card">
+    <div class="kpi-lbl">ACTIVE PROCESSING SCOPE</div>
+    <div class="kpi-val" id="scopeField">Awaiting active data stream...</div>
+</div>
+
+<!-- Card 2: Payload Scale -->
+<div class="kpi-card">
+    <div class="kpi-lbl">VECTORIZED PAYLOAD COUNT</div>
+    <div class="kpi-val" id="densityField">0</div> <!-- 👈 CHECK THIS ID! -->
+</div>
+
+<!-- Card 3: Query Latency -->
+<div class="kpi-card">
+    <div class="kpi-lbl">CURRENT QUERY LATENCY</div>
+    <div class="kpi-val" id="entropyField">0 ms</div> <!-- 👈 CHECK THIS ID! -->
+</div>
+
+            </div>
+        </div>
+    </main>
+    <script>
+        const API_BASE = "http://127.0.0.1:8000";
+
+function handleFileSelection() {
+    const input = document.getElementById('fileInput');
+    const label = document.getElementById('fileLabel');
+    if (input.files.length > 0) {
+        label.innerText = `Selected Payload: ${input.files[0].name}`;
+        label.style.color = "#60a5fa";
+    }
+}
+
+async function uploadDocument() {
+    const fileInput = document.getElementById('fileInput');
+    const statusLog = document.getElementById('statusLog');
+    if (fileInput.files.length === 0) { 
+        alert("Please select a valid PDF file first."); 
+        return; 
+    }
+    
+    const formData = new FormData();
+    formData.append("file", fileInput.files[0]);
+    
+    statusLog.className = "pulse";
+    statusLog.style.color = "var(--amber)";
+    statusLog.innerText = "Parsing binary elements and constructing core database vectors...";
+    
+    try {
+        const response = await fetch(`${API_BASE}/upload`, { method: "POST", body: formData });
+        const resData = await response.json();
+        
+        if (response.ok) {
+            statusLog.className = "";
+            statusLog.style.color = "var(--accent)";
+            statusLog.innerText = resData.message;
+            
+            // 🌟 STEP 1: Update the "ACTIVE PROCESSING SCOPE" card
+            if(document.getElementById('scopeField')) {
+                document.getElementById('scopeField').innerText = resData.meta.title;
+            }
+            
+            // 🌟 STEP 2: Update the "VECTORIZED PAYLOAD COUNT" card (using your HTML ID name)
+            // Note: If your HTML ID is 'densityField', it will update this card
+            if(document.getElementById('densityField')) {
+                document.getElementById('densityField').innerText = resData.meta.tokenDensity;
+            }
+            
+            // 🌟 STEP 3: Update the "CURRENT QUERY LATENCY" card
+            if(document.getElementById('entropyField')) {
+                document.getElementById('entropyField').innerText = resData.meta.entropyScore;
+            }
+            
+            // 🌟 STEP 4: Optional layouts check (Stops the code from crashing if these are missing!)
+            if(document.getElementById('chartTitle')) {
+                document.getElementById('chartTitle').innerText = `3. Chart: ${resData.meta.chartLabel}`;
+            }
+            
+            const graph = document.getElementById('graphContainer');
+            if(graph && resData.meta.chartData) {
+                const maxVal = Math.max(...resData.meta.chartData);
+                let chartHTML = "";
+                resData.meta.chartData.forEach((val, index) => {
+                    chartHTML += `
+                        <div class="bar-wrapper"> 
+                            <div class="bar" style="height: ${(val / maxVal) * 100}%;"> 
+                                <div class="bar-val">${val} ch</div> 
+                            </div> 
+                            <div class="bar-lbl">${resData.meta.chartTimeline[index]}</div> 
+                        </div>`;
+                });
+                graph.innerHTML = chartHTML;
+            }
+            
+            const matrixBox = document.getElementById('matrixContainer');
+            if(matrixBox && resData.meta.matrix) {
+                let matrixHTML = "";
+                resData.meta.matrix.forEach(row => {
+                    matrixHTML += `
+                        <div class="matrix-item"> 
+                            <div class="matrix-meta"> 
+                                <h4>${row.label}</h4> 
+                                <p>Memory Offset: ${row.target}</p> 
+                            </div> 
+                            <div class="matrix-tag" title="${row.value}">${row.value}</div> 
+                        </div>`;
+                });
+                matrixBox.innerHTML = matrixHTML;
+            }
+            
+            if(document.getElementById('responseField')) {
+                document.getElementById('responseField').innerText = "Dynamic file context loaded into memory bank array successfully. System awaiting query prompts.";
+                document.getElementById('responseField').style.color = "#94a3b8";
+            }
+            
+        } else { 
+            throw new Error(resData.detail); 
+        }
+    } catch (e) {
+        statusLog.className = "";
+        statusLog.style.color = "#ef4444";
+        statusLog.innerText = `Ingestion Failed: ${e.message}`;
+    }
+}
+
+async function submitQuery() {
+    const query = document.getElementById('queryInput').value;
+    const responseField = document.getElementById('responseField');
+    if (!query) return;
+    
+    responseField.className = "pulse";
+    responseField.style.color = "var(--amber)";
+    responseField.innerText = "Searching ChromaDB database keys and compiling semantic output matrix...";
+    
+    try {
+        const response = await fetch(`${API_BASE}/query`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ question: query })
+        });
+        const resData = await response.json();
+        
+        if(responseField) {
+            responseField.className = "";
+            responseField.style.color = "#cbd5e1";
+            responseField.innerText = resData.answer || "No meaningful response synthesized from text space.";
+        }
+    } catch (e) {
+        if(responseField) {
+            responseField.className = "";
+            responseField.style.color = "#ef4444";
+            responseField.innerText = `Query Compilation Execution Error: ${e.message}`;
+        }
+    }
+}
+
+
+    </script>  
