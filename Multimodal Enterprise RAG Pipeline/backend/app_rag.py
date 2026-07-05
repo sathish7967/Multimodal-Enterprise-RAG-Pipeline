@@ -31,7 +31,7 @@ app.add_middleware(
 )
 
 # Secure infrastructure orchestration key
-GROQ_API_KEY = "YOUR_GROQ_API_KEY_HERE"  # Replace with your actual Groq API key
+GROQ_API_KEY = "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"  # Replace with your actual Groq API key
 
 print("[SYSTEM]: Initializing HuggingFace local token engine and math modeling layer...")
 embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
